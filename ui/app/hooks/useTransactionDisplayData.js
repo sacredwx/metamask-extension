@@ -210,12 +210,12 @@ export function useTransactionDisplayData (transactionGroup) {
     date,
     subtitle,
     subtitleContainsOrigin,
-    primaryCurrency: transactionCategory === TRANSACTION_CATEGORY_SWAP_APPROVAL && isPending ? '' : primaryCurrency,
+    primaryCurrency: transactionCategory === TRANSACTION_CATEGORY_SWAP && isPending ? '' : primaryCurrency,
     senderAddress,
     recipientAddress,
     secondaryCurrency: (
       (isTokenCategory && !tokenFiatAmount) ||
-      (transactionCategory === TRANSACTION_CATEGORY_SWAP_APPROVAL && !swapTokenFiatAmount)
+      (transactionCategory === TRANSACTION_CATEGORY_SWAP && !swapTokenFiatAmount)
     ) ? undefined : secondaryCurrency,
     displayedStatusKey,
     isPending,
