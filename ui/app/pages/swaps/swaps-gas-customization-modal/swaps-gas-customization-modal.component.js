@@ -41,6 +41,7 @@ export default class GasModalPageContainer extends Component {
     setSwapsCustomizationModalPrice: PropTypes.func,
     setSwapsCustomizationModalLimit: PropTypes.func,
     gasEstimateLoadingHasFailed: PropTypes.bool,
+    minimumGasLimit: PropTypes.number.isRequired,
   }
 
   state = {
@@ -81,6 +82,7 @@ export default class GasModalPageContainer extends Component {
       setSwapsCustomizationModalLimit,
       customGasPrice,
       customGasLimit,
+      minimumGasLimit,
     } = this.props
 
     return (
@@ -111,6 +113,7 @@ export default class GasModalPageContainer extends Component {
               insufficientBalance={insufficientBalance}
               customPriceIsSafe={!showCustomPriceTooLowWarning}
               customGasLimitMessage={customGasLimitMessage}
+              minimumGasLimit={minimumGasLimit}
             />
           </div>
         </div>

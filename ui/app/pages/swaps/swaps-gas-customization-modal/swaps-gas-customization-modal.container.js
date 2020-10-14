@@ -48,6 +48,7 @@ const mapStateToProps = (state) => {
     extraInfoRow = null,
     initialGasPrice,
     initialGasLimit,
+    minimumGasLimit,
   } = modalProps || {}
   const buttonDataLoading = swapGasPriceEstimateIsLoading(state)
 
@@ -116,7 +117,8 @@ const mapStateToProps = (state) => {
     customTotalSupplement,
     conversionRate,
     value,
-    disableSave: insufficientBalance,
+    disableSave: insufficientBalance || (customGasLimit < minimumGasLimit),
+    minimumGasLimit,
   }
 }
 
