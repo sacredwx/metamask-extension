@@ -39,7 +39,7 @@ import {
   SWAPS_FETCH_ORDER_CONFLICT,
 } from '../../helpers/constants/swaps'
 import { SWAP, SWAP_APPROVAL } from '../../helpers/constants/transactions'
-import { fetchBasicGasAndTimeEstimates, fetchGasEstimates, resetCustomGasState } from '../gas/gas.duck'
+import { fetchMetaSwapsGasPriceEstimates, resetCustomGasState } from '../gas/gas.duck'
 import { formatCurrency } from '../../helpers/utils/confirm-tx.util'
 
 const initialState = {
@@ -237,10 +237,8 @@ export const prepareToLeaveSwaps = () => {
 
 export const fetchAndSetSwapsGasPriceInfo = () => {
   return async (dispatch) => {
-    const basicEstimates = await dispatch(fetchBasicGasAndTimeEstimates())
-    dispatch(setSwapsTxGasPrice(decGWEIToHexWEI(basicEstimates.fastest)))
-    await dispatch(fetchGasEstimates(basicEstimates.blockTime))
-
+    const basicEstimates = await dispatch(fetchMetaSwapsGasPriceEstimates())
+    dispatch(setSwapsTxGasPrice(decGWEIToHexWEI(basicEstimates.fast)))
   }
 }
 
