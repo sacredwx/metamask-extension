@@ -24,6 +24,14 @@ const fetch = fetchWithTimeout({
   timeout: 30000,
 })
 
+const etherscanSupportedNetworks = [
+  GOERLI_CHAIN_ID,
+  KOVAN_CHAIN_ID,
+  MAINNET_CHAIN_ID,
+  RINKEBY_CHAIN_ID,
+  ROPSTEN_CHAIN_ID,
+]
+
 export default class IncomingTransactionsController {
 
   constructor (opts = {}) {
@@ -111,21 +119,25 @@ export default class IncomingTransactionsController {
   }
 
   async _update ({ address, newBlockNumberDec } = {}) {
+    const chainId = this.networkController.getCurrentChainId()
+    if (!etherscanSupportedNetworks.includes(chainId)) {
+      return
+    }
     try {
-      const dataForUpdate = await this._getDataForUpdate({ address, newBlockNumberDec })
-      await this._updateStateWithNewTxData(dataForUpdate)
+      const dataForUpdate = await this._getDataForUpdate({ address, chainId, newBlockNumberDec })
+      this._updateStateWithNewTxData(dataForUpdate)
     } catch (err) {
+      console.error(err)
       log.error(err)
     }
   }
 
-  async _getDataForUpdate ({ address, newBlockNumberDec } = {}) {
+  async _getDataForUpdate ({ address, chainId, newBlockNumberDec } = {}) {
     const {
       incomingTransactions: currentIncomingTxs,
       incomingTxLastFetchedBlocksByNetwork: currentBlocksByNetwork,
     } = this.store.getState()
 
-    const chainId = this.networkController.getCurrentChainId()
     const lastFetchBlockByCurrentNetwork = currentBlocksByNetwork[CHAIN_ID_TO_TYPE_MAP[chainId]]
     let blockToFetchFrom = lastFetchBlockByCurrentNetwork || newBlockNumberDec
     if (blockToFetchFrom === undefined) {
@@ -144,7 +156,7 @@ export default class IncomingTransactionsController {
     }
   }
 
-  async _updateStateWithNewTxData ({
+  _updateStateWithNewTxData ({
     latestIncomingTxBlockNumber,
     newTxs,
     currentIncomingTxs,
@@ -177,10 +189,6 @@ export default class IncomingTransactionsController {
   }
 
   async _fetchTxs (address, fromBlock, chainId) {
-    if (!CHAIN_ID_TO_TYPE_MAP[chainId]) {
-      return {}
-    }
-
     const etherscanSubdomain = chainId === MAINNET_CHAIN_ID
       ? 'api'
       : `api-${CHAIN_ID_TO_TYPE_MAP[chainId]}`
