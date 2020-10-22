@@ -463,6 +463,7 @@ export const fetchQuotesAndSetQuoteState = (history, inputValue, maxSlippage, me
       }
       // TODO: Check for any errors we should expect to occur in production, and report others to Sentry
       log.error(`Error fetching quotes: `, e)
+
       dispatch(setSwapsErrorKey(ERROR_FETCHING_QUOTES))
     }
 
