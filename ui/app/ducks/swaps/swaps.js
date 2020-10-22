@@ -172,7 +172,7 @@ export function isCustomSwapsGasPriceSafe (state) {
     return false
   }
 
-  const customPriceSafe = conversionGreaterThan(
+  const customPriceSafe = conversionGTE(
     {
       value: customGasPrice,
       fromNumericBase: 'hex',
