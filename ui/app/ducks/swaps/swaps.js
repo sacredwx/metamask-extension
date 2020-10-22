@@ -44,7 +44,6 @@ import {
   SWAPS_FETCH_ORDER_CONFLICT,
 } from '../../helpers/constants/swaps'
 import { SWAP, SWAP_APPROVAL } from '../../helpers/constants/transactions'
-import { resetCustomGasState } from '../gas/gas.duck'
 import { formatCurrency } from '../../helpers/utils/confirm-tx.util'
 
 const initialState = {
@@ -313,7 +312,6 @@ export const prepareForRetryGetQuotes = () => {
 
 export const prepareToLeaveSwaps = () => {
   return async (dispatch) => {
-    dispatch(resetCustomGasState())
     dispatch(clearSwapsState())
     await dispatch(resetBackgroundSwapsState())
 
