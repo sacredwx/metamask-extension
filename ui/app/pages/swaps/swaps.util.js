@@ -292,7 +292,7 @@ export async function fetchSwapsGasPrices () {
   const responseIsValid = validateData(SWAP_GAS_PRICE_VALIDATOR, response, gasPricesUrl)
 
   if (!responseIsValid) {
-    return {}
+    throw new Error(`${gasPricesUrl} response is invalid`)
   }
 
   const {
