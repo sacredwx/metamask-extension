@@ -183,13 +183,13 @@ export const getSwapsPriceEstimatesLastRetrieved = (state) => state.swaps.custom
 
 export const getSwapsFallbackGasPrice = (state) => state.swaps.customGas.fallBackPrice
 
-export function isCustomSwapsGasPriceSafe (state) {
+export function isCustomSwapsGasPriceUnSafe (state) {
   const { average } = getSwapGasPriceEstimateData(state)
 
   const customGasPrice = getSwapsCustomizationModalPrice(state)
 
   if (!customGasPrice || (average === undefined)) {
-    return true
+    return false
   }
 
   const customPriceSafe = conversionGTE(
@@ -202,7 +202,7 @@ export function isCustomSwapsGasPriceSafe (state) {
     { value: average, fromNumericBase: 'dec' },
   )
 
-  return customPriceSafe
+  return !customPriceSafe
 }
 
 // Background selectors
