@@ -46,6 +46,13 @@ import {
 import { SWAP, SWAP_APPROVAL } from '../../helpers/constants/transactions'
 import { formatCurrency } from '../../helpers/utils/confirm-tx.util'
 
+const GAS_PRICES_LOADING_STATES = {
+  INITIAL: 'INITIAL',
+  LOADING: 'LOADING',
+  FAILED: 'FAILED',
+  COMPLETED: 'COMPLETED',
+}
+
 const initialState = {
   aggregatorMetadata: null,
   approveTxId: null,
@@ -58,9 +65,10 @@ const initialState = {
   customGas: {
     price: null,
     limit: null,
-    loading: false,
+    loading: GAS_PRICES_LOADING_STATES.INITIAL,
     priceEstimates: {},
     priceEstimatesLastRetrieved: 0,
+    fallBackPrice: null,
   },
 }
 
@@ -112,18 +120,30 @@ const slice = createSlice({
         limit: action.payload,
       }
     },
-    swapGasPriceEstimatesFetchStarted: (state, action) => {
+    swapGasPriceEstimatesFetchStarted: (state) => {
       state.customGas = {
         ...state.customGas,
-        loading: action.payload,
+        loading: GAS_PRICES_LOADING_STATES.LOADING,
+      }
+    },
+    swapGasPriceEstimatesFetchFailed: (state) => {
+      state.customGas = {
+        ...state.customGas,
+        loading: GAS_PRICES_LOADING_STATES.FAILED,
       }
     },
     swapGasPriceEstimatesFetchCompleted: (state, action) => {
       state.customGas = {
         ...state.customGas,
         priceEstimates: action.payload.priceEstimates,
-        loading: action.payload.loading,
+        loading: GAS_PRICES_LOADING_STATES.COMPLETED,
         priceEstimatesLastRetrieved: action.payload.priceEstimatesLastRetrieved,
+      }
+    },
+    retrievedFallbackSwapsGasPrice: (state, action) => {
+      state.customGas = {
+        ...state.customGas,
+        fallBackPrice: action.payload,
       }
     },
   },
@@ -153,23 +173,23 @@ export const getSwapsCustomizationModalPrice = (state) => state.swaps.customGas.
 
 export const getSwapsCustomizationModalLimit = (state) => state.swaps.customGas.limit
 
-export const getSwapGasEstimateLoadingStatus = (state) => state.swaps.customGas.loading
+export const swapGasPriceEstimateIsLoading = (state) => state.swaps.customGas.loading === GAS_PRICES_LOADING_STATES.LOADING
+
+export const swapGasEstimateLoadingHasFailed = (state) => state.swaps.customGas.loading === GAS_PRICES_LOADING_STATES.INITIAL
 
 export const getSwapGasPriceEstimateData = (state) => state.swaps.customGas.priceEstimates
 
 export const getSwapsPriceEstimatesLastRetrieved = (state) => state.swaps.customGas.priceEstimatesLastRetrieved
+
+export const getSwapsFallbackGasPrice = (state) => state.swaps.customGas.fallBackPrice
 
 export function isCustomSwapsGasPriceSafe (state) {
   const { average } = getSwapGasPriceEstimateData(state)
 
   const customGasPrice = getSwapsCustomizationModalPrice(state)
 
-  if (!customGasPrice) {
+  if (!customGasPrice || (average === undefined)) {
     return true
-  }
-
-  if (average === null) {
-    return false
   }
 
   const customPriceSafe = conversionGTE(
@@ -239,7 +259,7 @@ export const getSwapsTradeTxParams = (state) => {
   }
   const { trade } = usedQuote
   const gas = getCustomSwapsGas(state) || trade.gas
-  const gasPrice = getCustomSwapsGasPrice(state) || trade.gasPrice
+  const gasPrice = getCustomSwapsGasPrice(state) || trade.gasPrice || getSwapsFallbackGasPrice(state)
   return { ...trade, gas, gasPrice }
 }
 
@@ -263,6 +283,7 @@ const {
   retriedGetQuotes,
   swapGasPriceEstimatesFetchCompleted,
   swapGasPriceEstimatesFetchStarted,
+  swapGasPriceEstimatesFetchFailed,
   setAggregatorMetadata,
   setBalanceError,
   setFetchingQuotes,
@@ -272,6 +293,7 @@ const {
   setToToken,
   swapCustomGasModalPriceEdited,
   swapCustomGasModalLimitEdited,
+  retrievedFallbackSwapsGasPrice,
 } = actions
 
 export {
@@ -316,7 +338,10 @@ export const prepareToLeaveSwaps = () => {
 export const fetchAndSetSwapsGasPriceInfo = () => {
   return async (dispatch) => {
     const basicEstimates = await dispatch(fetchMetaSwapsGasPriceEstimates())
-    dispatch(setSwapsTxGasPrice(decGWEIToHexWEI(basicEstimates.fast)))
+
+    if (basicEstimates?.fast) {
+      dispatch(setSwapsTxGasPrice(decGWEIToHexWEI(basicEstimates.fast)))
+    }
   }
 }
 
@@ -616,14 +641,29 @@ export function fetchMetaSwapsGasPriceEstimates () {
     const priceEstimatesLastRetrieved = getSwapsPriceEstimatesLastRetrieved(state)
     const timeLastRetrieved = priceEstimatesLastRetrieved || loadLocalStorageData('METASWAP_GAS_PRICE_ESTIMATES_LAST_RETRIEVED') || 0
 
-    dispatch(swapGasPriceEstimatesFetchStarted(true))
+    dispatch(swapGasPriceEstimatesFetchStarted())
 
     let priceEstimates
-    if (Date.now() - timeLastRetrieved > 30000) {
-      priceEstimates = await fetchSwapsGasPrices()
-    } else {
-      const cachedPriceEstimates = loadLocalStorageData('METASWAP_GAS_PRICE_ESTIMATES')
-      priceEstimates = cachedPriceEstimates || await fetchSwapsGasPrices()
+    try {
+      if (Date.now() - timeLastRetrieved > 30000) {
+        priceEstimates = await fetchSwapsGasPrices()
+      } else {
+        const cachedPriceEstimates = loadLocalStorageData('METASWAP_GAS_PRICE_ESTIMATES')
+        priceEstimates = cachedPriceEstimates || await fetchSwapsGasPrices()
+      }
+    } catch (e) {
+      dispatch(swapGasPriceEstimatesFetchFailed())
+
+      try {
+        const gasPrice = await global.ethQuery.gasPrice()
+        const gasPriceInDecGWEI = hexWEIToDecGWEI(gasPrice.toString(10))
+
+        dispatch(retrievedFallbackSwapsGasPrice(gasPriceInDecGWEI))
+
+        return null
+      } catch (e2) {
+        return null
+      }
     }
 
     const timeRetrieved = Date.now()
@@ -633,7 +673,6 @@ export function fetchMetaSwapsGasPriceEstimates () {
 
     dispatch(swapGasPriceEstimatesFetchCompleted({
       priceEstimates,
-      loading: false,
       priceEstimatesLastRetrieved: timeRetrieved,
     }))
     return priceEstimates
