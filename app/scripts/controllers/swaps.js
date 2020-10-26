@@ -551,7 +551,7 @@ export default class SwapsController {
       // savings.performance is meant to be the eth value of the difference in
       //   token received when choosing the best quote over the median. Because
       //   savings.total is a comparison of overall value of the best quote after
-      //   fees have been extracted to overall balue of the media quote before
+      //   fees have been extracted to overall value of the media quote before
       //   fees have been extracted, savings.performance needs to adjust for the
       //   fee extracted from the best quote. Hence the addition of the
       //   metaMaskFeeInEthForBestQuote. This ensures that
