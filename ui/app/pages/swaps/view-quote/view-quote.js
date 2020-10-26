@@ -22,7 +22,7 @@ import {
   getBalanceError,
   getCustomSwapsGas,
   getDestinationTokenInfo,
-  getSwapsTradeTxParams,
+  getUsedSwapsGasPrice,
   getTopQuote,
   navigateBackToBuildQuote,
   signAndSendTransactions,
@@ -98,8 +98,7 @@ export default function ViewQuote () {
   const quotesLastFetched = useSelector(getQuotesLastFetched)
 
   // Select necessary data
-  const tradeTxParams = useSelector(getSwapsTradeTxParams)
-  const { gasPrice, value: tradeValue } = tradeTxParams || {}
+  const gasPrice = useSelector(getUsedSwapsGasPrice)
   const customMaxGas = useSelector(getCustomSwapsGas)
   const tokenConversionRates = useSelector(getTokenExchangeRates)
   const memoizedTokenConversionRates = useEqualityCheck(tokenConversionRates)
@@ -113,6 +112,7 @@ export default function ViewQuote () {
   const selectedQuote = useSelector(getSelectedQuote)
   const topQuote = useSelector(getTopQuote)
   const usedQuote = selectedQuote || topQuote
+  const { value: tradeValue } = usedQuote?.trade?.value || {}
 
   const fetchParamsSourceToken = fetchParams?.sourceToken
 
@@ -401,7 +401,7 @@ export default function ViewQuote () {
 
   const onFeeCardMaxRowClick = () => dispatch(showModal({
     name: 'CUSTOMIZE_METASWAP_GAS',
-    txParams: tradeTxParams,
+    value: usedQuote.value,
     customGasLimitMessage: (
       approveGas
         ? t('extraApprovalGas', [hexToDecimal(approveGas)])
