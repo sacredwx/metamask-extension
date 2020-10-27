@@ -26,6 +26,7 @@ import {
 } from '../../../../ducks/send/send.duck'
 import {
   conversionRateSelector as getConversionRate,
+  getUSDConversionRate,
   getCurrentCurrency,
   getCurrentEthBalance,
   getIsMainnet,
@@ -202,9 +203,9 @@ const mapStateToProps = (state, ownProps) => {
     tokenBalance: getTokenBalance(state),
     customGasLimitMessage,
     conversionRate,
-    value,
     customTotalSupplement,
     minimumGasLimit,
+    usdConversionRate: getUSDConversionRate(state),
   }
 }
 

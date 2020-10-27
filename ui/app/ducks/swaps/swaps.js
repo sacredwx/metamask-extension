@@ -29,7 +29,7 @@ import {
   getFastPriceEstimateInHexWEI,
   getSelectedAccount,
   getTokenExchangeRates,
-  conversionRateSelector as getConversionRate,
+  getUSDConversionRate,
 } from '../../selectors'
 import {
   ERROR_FETCHING_QUOTES,
@@ -40,7 +40,6 @@ import {
 } from '../../helpers/constants/swaps'
 import { SWAP, SWAP_APPROVAL } from '../../helpers/constants/transactions'
 import { fetchBasicGasAndTimeEstimates, fetchGasEstimates, resetCustomGasState } from '../gas/gas.duck'
-import { formatCurrency } from '../../helpers/utils/confirm-tx.util'
 
 const initialState = {
   aggregatorMetadata: null,
@@ -452,21 +451,21 @@ export const signAndSendTransactions = (history, metaMetricsEvent) => {
     const usedGasPrice = customConvertGasPrice || tradeTxParams?.gasPrice || fastGasEstimate
     usedTradeTxParams.gasPrice = usedGasPrice
 
-    const conversionRate = getConversionRate(state)
+    const usdConversionRate = getUSDConversionRate(state)
     const destinationValue = calcTokenAmount(usedQuote.destinationAmount, destinationTokenInfo.decimals || 18).toPrecision(8)
     const usedGasLimitEstimate = usedQuote?.gasEstimateWithRefund || (`0x${decimalToHex(usedQuote?.averageGas || 0)}`)
     const totalGasLimitEstimate = (new BigNumber(usedGasLimitEstimate, 16)).plus(usedQuote.approvalNeeded?.gas || '0x0', 16).toString(16)
-    const gasEstimateTotalInEth = getValueFromWeiHex({
+    const gasEstimateTotalInUSD = getValueFromWeiHex({
       value: calcGasTotal(totalGasLimitEstimate, usedGasPrice),
       toCurrency: 'usd',
-      conversionRate,
+      conversionRate: usdConversionRate,
       numberOfDecimals: 6,
     })
     const averageSavings = usedQuote.isBestQuote
       ? decEthToConvertedCurrency(
         usedQuote.savings?.total,
         'usd',
-        conversionRate,
+        usdConversionRate,
       )
       : null
     const swapMetaData = {
@@ -480,7 +479,7 @@ export const signAndSendTransactions = (history, metaMetricsEvent) => {
       available_quotes: getQuotes(state)?.length,
       other_quote_selected: usedQuote.aggregator !== getTopQuote(state)?.aggregator,
       other_quote_selected_source: usedQuote.aggregator === getTopQuote(state)?.aggregator ? '' : usedQuote.aggregator,
-      gas_fees: formatCurrency(gasEstimateTotalInEth, 'usd')?.slice(1),
+      gas_fees: gasEstimateTotalInUSD,
       estimated_gas: estimatedGasLimit.toString(10),
       suggested_gas_price: hexWEIToDecGWEI(usedGasPrice),
       used_gas_price: hexWEIToDecGWEI(fastGasEstimate),

@@ -153,7 +153,7 @@ export default class MetamaskController extends EventEmitter {
       preferencesStore: this.preferencesController.store,
     })
 
-    this.currencyRateController = new CurrencyRateController(undefined, initState.CurrencyController)
+    this.currencyRateController = new CurrencyRateController({ includeUSDRate: true }, initState.CurrencyController)
 
     this.phishingController = new PhishingController()
 

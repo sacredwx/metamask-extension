@@ -336,3 +336,7 @@ export function getOriginOfCurrentTab (state) {
 export function getIpfsGateway (state) {
   return state.metamask.ipfsGateway
 }
+
+export function getUSDConversionRate (state) {
+  return state.metamask.usdConversionRate
+}

@@ -4,7 +4,7 @@ import PageContainer from '../../../ui/page-container'
 import { Tabs, Tab } from '../../../ui/tabs'
 import { calcGasTotal } from '../../../../pages/send/send.utils'
 import {
-  sumHexWEIsToRenderableFiat,
+  sumHexWEIsToUnformattedFiat,
 } from '../../../../helpers/utils/conversions.util'
 import AdvancedTabContent from './advanced-tab-content'
 import BasicTabContent from './basic-tab-content'
@@ -52,8 +52,7 @@ export default class GasModalPageContainer extends Component {
     customGasLimitMessage: PropTypes.string,
     customTotalSupplement: PropTypes.string,
     isSwap: PropTypes.bool,
-    value: PropTypes.string,
-    conversionRate: PropTypes.number,
+    usdConversionRate: PropTypes.number,
     minimumGasLimit: PropTypes.number.isRequired,
   }
 
@@ -239,7 +238,11 @@ export default class GasModalPageContainer extends Component {
                 properties: {
                   speed_set: speedSet,
                   gas_mode: this.state.selectedTab,
-                  gas_fees: sumHexWEIsToRenderableFiat([this.props.value, newSwapGasTotal, this.props.customTotalSupplement], 'usd', this.props.conversionRate)?.slice(1),
+                  gas_fees: sumHexWEIsToUnformattedFiat(
+                    [newSwapGasTotal, this.props.customTotalSupplement],
+                    'usd',
+                    this.props.usdConversionRate,
+                  ),
                 },
               })
             }
