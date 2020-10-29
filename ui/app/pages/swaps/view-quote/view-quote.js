@@ -112,7 +112,7 @@ export default function ViewQuote () {
   const selectedQuote = useSelector(getSelectedQuote)
   const topQuote = useSelector(getTopQuote)
   const usedQuote = selectedQuote || topQuote
-  const { value: tradeValue } = usedQuote?.trade?.value || {}
+  const { value: tradeValue = '0x0' } = usedQuote?.trade?.value || {}
 
   const fetchParamsSourceToken = fetchParams?.sourceToken
 
